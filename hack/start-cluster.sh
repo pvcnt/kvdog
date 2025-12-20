@@ -60,7 +60,7 @@ rm -rf /tmp/kvdog
 
 # Start node 1 (bootstrap node)
 echo "Starting node1 (bootstrap)..."
-$BINARY -config "$SCRIPT_DIR/etc/node1.json" > /tmp/kvdog-node1.log 2>&1 &
+$BINARY -config "$SCRIPT_DIR/etc/node1.json" -metadata "$SCRIPT_DIR/etc/metadata.json" > /tmp/kvdog-node1.log 2>&1 &
 PIDS+=($!)
 echo "Node1 started (PID: ${PIDS[0]})"
 
@@ -69,13 +69,13 @@ sleep 2
 
 # Start node 2
 echo "Starting node2..."
-$BINARY -config "$SCRIPT_DIR/etc/node2.json" > /tmp/kvdog-node2.log 2>&1 &
+$BINARY -config "$SCRIPT_DIR/etc/node2.json" -metadata "$SCRIPT_DIR/etc/metadata.json" > /tmp/kvdog-node2.log 2>&1 &
 PIDS+=($!)
 echo "Node2 started (PID: ${PIDS[1]})"
 
 # Start node 3
 echo "Starting node3..."
-$BINARY -config "$SCRIPT_DIR/etc/node3.json" > /tmp/kvdog-node3.log 2>&1 &
+$BINARY -config "$SCRIPT_DIR/etc/node3.json" -metadata "$SCRIPT_DIR/etc/metadata.json" > /tmp/kvdog-node3.log 2>&1 &
 PIDS+=($!)
 echo "Node3 started (PID: ${PIDS[2]})"
 

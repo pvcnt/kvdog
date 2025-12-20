@@ -21,10 +21,14 @@ func main() {
 
 func run() error {
 	configPath := flag.String("config", "", "Path to configuration file")
+	metadataPath := flag.String("metadata", "", "Path to sharding metadata file")
 	flag.Parse()
 
 	if *configPath == "" {
 		return fmt.Errorf("configuration file is required")
+	}
+	if *metadataPath == "" {
+		return fmt.Errorf("metadata file is required")
 	}
 
 	// Load configuration
@@ -33,7 +37,15 @@ func run() error {
 		return fmt.Errorf("failed to load configuration: %v", err)
 	}
 
-	s, err := server.NewServer(cfg)
+	// Load sharding metadata
+	metadata, err := server.LoadMetadata(*metadataPath)
+	if err != nil {
+		return fmt.Errorf("failed to load metadata: %v", err)
+	}
+
+	log.Printf("Loaded sharding metadata with %d shards", len(metadata.Shards))
+
+	s, err := server.NewServer(cfg, metadata)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %v", err)
 	}

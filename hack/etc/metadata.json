@@ -1,0 +1,64 @@
+{
+  "shards": [
+    {
+      "id": 0,
+      "key_range_start": 0,
+      "key_range_end": 4611686018427387904,
+      "replicas": [
+        {
+          "peer_id": "node1",
+          "raft_addr": "127.0.0.1:7100"
+        },
+        {
+          "peer_id": "node2",
+          "raft_addr": "127.0.0.1:7200"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "key_range_start": 4611686018427387904,
+      "key_range_end": 9223372036854775808,
+      "replicas": [
+        {
+          "peer_id": "node2",
+          "raft_addr": "127.0.0.1:7201"
+        },
+        {
+          "peer_id": "node3",
+          "raft_addr": "127.0.0.1:7301"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "key_range_start": 9223372036854775808,
+      "key_range_end": 13835058055282163712,
+      "replicas": [
+        {
+          "peer_id": "node3",
+          "raft_addr": "127.0.0.1:7302"
+        },
+        {
+          "peer_id": "node1",
+          "raft_addr": "127.0.0.1:7102"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "key_range_start": 13835058055282163712,
+      "key_range_end": 18446744073709551615,
+      "replicas": [
+        {
+          "peer_id": "node1",
+          "raft_addr": "127.0.0.1:7103"
+        },
+        {
+          "peer_id": "node2",
+          "raft_addr": "127.0.0.1:7203"
+        }
+      ]
+    }
+  ]
+}
