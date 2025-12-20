@@ -1,0 +1,24 @@
+{
+  "node_id": "node2",
+  "raft_addr": "127.0.0.1:7002",
+  "grpc_addr": "127.0.0.1:50052",
+  "data_dir": "/tmp/kvdog/node2",
+  "bootstrap": false,
+  "peers": [
+    {
+      "id": "node1",
+      "raft_addr": "127.0.0.1:7001",
+      "grpc_addr": "127.0.0.1:50051"
+    },
+    {
+      "id": "node2",
+      "raft_addr": "127.0.0.1:7002",
+      "grpc_addr": "127.0.0.1:50052"
+    },
+    {
+      "id": "node3",
+      "raft_addr": "127.0.0.1:7003",
+      "grpc_addr": "127.0.0.1:50053"
+    }
+  ]
+}

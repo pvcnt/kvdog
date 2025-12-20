@@ -12,8 +12,23 @@ func TestLoadConfig_ValidConfig(t *testing.T) {
 	configPath := filepath.Join(tmpDir, "config.json")
 
 	validConfig := `{
+		"node_id": "node1",
+		"raft_addr": "127.0.0.1:7001",
 		"grpc_addr": "127.0.0.1:8001",
-		"data_dir": "/tmp/kvdog/node1"
+		"data_dir": "/tmp/kvdog/node1",
+		"bootstrap": true,
+		"peers": [
+			{
+				"id": "node1",
+				"raft_addr": "127.0.0.1:7001",
+				"grpc_addr": "127.0.0.1:8001"
+			},
+			{
+				"id": "node2",
+				"raft_addr": "127.0.0.1:7002",
+				"grpc_addr": "127.0.0.1:8002"
+			}
+		]
 	}`
 
 	if err := os.WriteFile(configPath, []byte(validConfig), 0644); err != nil {
@@ -25,11 +40,31 @@ func TestLoadConfig_ValidConfig(t *testing.T) {
 		t.Fatalf("LoadConfig() returned unexpected error: %v", err)
 	}
 
+	if cfg.NodeID != "node1" {
+		t.Errorf("expected NodeID to be 'node1', got '%s'", cfg.NodeID)
+	}
+	if cfg.RaftAddr != "127.0.0.1:7001" {
+		t.Errorf("expected RaftAddr to be '127.0.0.1:7001', got '%s'", cfg.RaftAddr)
+	}
 	if cfg.GRPCAddr != "127.0.0.1:8001" {
 		t.Errorf("expected GRPCAddr to be '127.0.0.1:8001', got '%s'", cfg.GRPCAddr)
 	}
 	if cfg.DataDir != "/tmp/kvdog/node1" {
 		t.Errorf("expected DataDir to be '/tmp/kvdog/node1', got '%s'", cfg.DataDir)
+	}
+	if !cfg.Bootstrap {
+		t.Errorf("expected Bootstrap to be true, got false")
+	}
+	if len(cfg.Peers) != 2 {
+		t.Errorf("expected 2 peers, got %d", len(cfg.Peers))
+	}
+	if len(cfg.Peers) >= 2 {
+		if cfg.Peers[0].ID != "node1" {
+			t.Errorf("expected first peer ID to be 'node1', got '%s'", cfg.Peers[0].ID)
+		}
+		if cfg.Peers[1].ID != "node2" {
+			t.Errorf("expected second peer ID to be 'node2', got '%s'", cfg.Peers[1].ID)
+		}
 	}
 }
 
@@ -69,6 +104,24 @@ func TestLoadConfig_MissingRequiredFields(t *testing.T) {
 		expectedErr string
 	}{
 		{
+			name: "missing node_id",
+			config: `{
+				"raft_addr": "127.0.0.1:7001",
+				"grpc_addr": "127.0.0.1:8001",
+				"data_dir": "/tmp/kvdog/node1"
+			}`,
+			expectedErr: "node_id is required",
+		},
+		{
+			name: "missing raft_addr",
+			config: `{
+				"node_id": "node1",
+				"grpc_addr": "127.0.0.1:8001",
+				"data_dir": "/tmp/kvdog/node1"
+			}`,
+			expectedErr: "raft_addr is required",
+		},
+		{
 			name: "missing grpc_addr",
 			config: `{
 				"node_id": "node1",
@@ -85,6 +138,26 @@ func TestLoadConfig_MissingRequiredFields(t *testing.T) {
 				"grpc_addr": "127.0.0.1:8001"
 			}`,
 			expectedErr: "data_dir is required",
+		},
+		{
+			name: "empty node_id",
+			config: `{
+				"node_id": "",
+				"raft_addr": "127.0.0.1:7001",
+				"grpc_addr": "127.0.0.1:8001",
+				"data_dir": "/tmp/kvdog/node1"
+			}`,
+			expectedErr: "node_id is required",
+		},
+		{
+			name: "empty raft_addr",
+			config: `{
+				"node_id": "node1",
+				"raft_addr": "",
+				"grpc_addr": "127.0.0.1:8001",
+				"data_dir": "/tmp/kvdog/node1"
+			}`,
+			expectedErr: "raft_addr is required",
 		},
 		{
 			name: "empty grpc_addr",

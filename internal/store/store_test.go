@@ -35,6 +35,18 @@ func RunStoreTests(t *testing.T, name string, factory StoreFactory) {
 		t.Run("LargeValue", func(t *testing.T) {
 			testLargeValue(t, factory)
 		})
+		t.Run("SnapshotEmpty", func(t *testing.T) {
+			testSnapshotEmpty(t, factory)
+		})
+		t.Run("SnapshotAndRestore", func(t *testing.T) {
+			testSnapshotAndRestore(t, factory)
+		})
+		t.Run("SnapshotMultipleKeys", func(t *testing.T) {
+			testSnapshotMultipleKeys(t, factory)
+		})
+		t.Run("RestoreOverwrites", func(t *testing.T) {
+			testRestoreOverwrites(t, factory)
+		})
 	})
 }
 
@@ -202,5 +214,152 @@ func testLargeValue(t *testing.T, factory StoreFactory) {
 	}
 	if !bytes.Equal(value, largeValue) {
 		t.Error("large value not stored correctly")
+	}
+}
+
+func testSnapshotEmpty(t *testing.T, factory StoreFactory) {
+	store := factory(t)
+
+	snapshot := store.Snapshot()
+	if snapshot == nil {
+		t.Fatal("expected snapshot to not be nil")
+	}
+
+	var buf bytes.Buffer
+	n, err := snapshot.Write(&buf)
+	if err != nil {
+		t.Errorf("expected no error writing snapshot, got %v", err)
+	}
+	if n == 0 {
+		t.Error("expected snapshot to write some bytes")
+	}
+	if int64(buf.Len()) != n {
+		t.Errorf("expected %d bytes written, got %d", n, buf.Len())
+	}
+}
+
+func testSnapshotAndRestore(t *testing.T, factory StoreFactory) {
+	store1 := factory(t)
+
+	keys := []string{"key1", "key2", "key3"}
+	values := [][]byte{[]byte("value1"), []byte("value2"), []byte("value3")}
+
+	for i, key := range keys {
+		if err := store1.Set(key, values[i]); err != nil {
+			t.Errorf("expected no error writing key %s, got %v", key, err)
+		}
+	}
+
+	snapshot := store1.Snapshot()
+	if snapshot == nil {
+		t.Fatal("expected snapshot to not be nil")
+	}
+
+	var buf bytes.Buffer
+	n, err := snapshot.Write(&buf)
+	if err != nil {
+		t.Fatalf("expected no error writing snapshot, got %v", err)
+	}
+	if n == 0 {
+		t.Fatal("expected snapshot to write some bytes")
+	}
+
+	store2 := factory(t)
+	if err := store2.Restore(&buf); err != nil {
+		t.Fatalf("expected no error restoring snapshot, got %v", err)
+	}
+
+	for i, key := range keys {
+		value, found := store2.Get(key)
+		if !found {
+			t.Errorf("expected key %s to be found after restore", key)
+		}
+		if !bytes.Equal(value, values[i]) {
+			t.Errorf("expected value %v for key %s after restore, got %v", values[i], key, value)
+		}
+	}
+}
+
+func testSnapshotMultipleKeys(t *testing.T, factory StoreFactory) {
+	store := factory(t)
+
+	testData := make(map[string][]byte)
+	for i := 0; i < 100; i++ {
+		key := string(rune('a'+i%26)) + string(rune('0'+i/26))
+		value := []byte(key + "_value")
+		testData[key] = value
+		if err := store.Set(key, value); err != nil {
+			t.Fatalf("expected no error writing key %s, got %v", key, err)
+		}
+	}
+
+	snapshot := store.Snapshot()
+	var buf bytes.Buffer
+	if _, err := snapshot.Write(&buf); err != nil {
+		t.Fatalf("expected no error writing snapshot, got %v", err)
+	}
+
+	newStore := factory(t)
+	if err := newStore.Restore(&buf); err != nil {
+		t.Fatalf("expected no error restoring snapshot, got %v", err)
+	}
+
+	for key, expectedValue := range testData {
+		value, found := newStore.Get(key)
+		if !found {
+			t.Errorf("expected key %s to be found after restore", key)
+		}
+		if !bytes.Equal(value, expectedValue) {
+			t.Errorf("expected value %v for key %s after restore, got %v", expectedValue, key, value)
+		}
+	}
+}
+
+func testRestoreOverwrites(t *testing.T, factory StoreFactory) {
+	store1 := factory(t)
+
+	if err := store1.Set("key1", []byte("value1")); err != nil {
+		t.Fatalf("expected no error writing key1, got %v", err)
+	}
+	if err := store1.Set("key2", []byte("value2")); err != nil {
+		t.Fatalf("expected no error writing key2, got %v", err)
+	}
+
+	snapshot := store1.Snapshot()
+	var buf bytes.Buffer
+	if _, err := snapshot.Write(&buf); err != nil {
+		t.Fatalf("expected no error writing snapshot, got %v", err)
+	}
+
+	store2 := factory(t)
+	if err := store2.Set("key3", []byte("value3")); err != nil {
+		t.Fatalf("expected no error writing key3, got %v", err)
+	}
+	if err := store2.Set("key1", []byte("different_value")); err != nil {
+		t.Fatalf("expected no error writing key1, got %v", err)
+	}
+
+	if err := store2.Restore(&buf); err != nil {
+		t.Fatalf("expected no error restoring snapshot, got %v", err)
+	}
+
+	value1, found := store2.Get("key1")
+	if !found {
+		t.Error("expected key1 to be found after restore")
+	}
+	if !bytes.Equal(value1, []byte("value1")) {
+		t.Errorf("expected key1 to have value from snapshot, got %v", value1)
+	}
+
+	value2, found := store2.Get("key2")
+	if !found {
+		t.Error("expected key2 to be found after restore")
+	}
+	if !bytes.Equal(value2, []byte("value2")) {
+		t.Errorf("expected key2 to have value from snapshot, got %v", value2)
+	}
+
+	if _, found := store2.Get("key3"); found {
+		t.Error("expected key3 to not be found after restore (should be overwritten)")
 	}
 }

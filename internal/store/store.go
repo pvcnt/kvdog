@@ -15,4 +15,15 @@ type Store interface {
 
 	// Delete removes a key from the store
 	Delete(key string) error
+
+	// Snapshot creates a snapshot
+	Snapshot() Snapshot
+
+	// Restore a snapshot. It is never called concurrently with another method.
+	Restore(r io.Reader) error
+}
+
+type Snapshot interface {
+	// Write a snapshot
+	Write(w io.Writer) (int64, error)
 }

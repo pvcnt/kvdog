@@ -1,4 +1,0 @@
-{
-  "grpc_addr": "127.0.0.1:50051",
-  "data_dir": "/tmp/kvdog/node1"
-}

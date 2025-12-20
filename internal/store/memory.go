@@ -1,6 +1,9 @@
 package store
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"sync"
 )
 
@@ -43,4 +46,36 @@ func (m *memoryStore) Delete(key string) error {
 
 	delete(m.data, key)
 	return nil
+}
+
+func (m *memoryStore) Snapshot() Snapshot {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	return &memorySnapshot{m.data}
+}
+
+func (m *memoryStore) Restore(r io.Reader) error {
+	d := make(map[string][]byte)
+	if err := json.NewDecoder(r).Decode(&d); err != nil {
+		return fmt.Errorf("failed to unmarshal data: %v", err)
+	}
+	m.data = d
+	return nil
+}
+
+type memorySnapshot struct {
+	data map[string][]byte
+}
+
+func (m *memorySnapshot) Write(w io.Writer) (int64, error) {
+	b, err := json.Marshal(m.data)
+	if err != nil {
+		return 0, fmt.Errorf("failed to marshal data: %v", err)
+	}
+	var n int
+	if n, err = w.Write(b); err != nil {
+		return int64(n), fmt.Errorf("failed to write data: %v", err)
+	}
+	return int64(n), nil
 }

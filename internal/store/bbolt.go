@@ -2,7 +2,11 @@ package store
 
 import (
 	"fmt"
+	"io"
+	"math/rand"
+	"os"
 	"path/filepath"
+	"time"
 
 	"go.etcd.io/bbolt"
 )
@@ -103,4 +107,42 @@ func (b *boltStore) Delete(key string) error {
 		}
 		return nil
 	})
+}
+
+func (b *boltStore) Snapshot() Snapshot {
+	return &boltSnapshot{b.db}
+}
+
+func (b *boltStore) Restore(r io.Reader) error {
+	// Write the snapshot to a file before opening it as a new database.
+	path := filepath.Join(b.dir, fmt.Sprintf("%v-%v.db", time.Now().Nanosecond(), rand.Int()))
+	f, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("failed to create file %s: %v", path, err)
+	}
+	if _, err := io.Copy(f, r); err != nil {
+		_ = f.Close()
+		return fmt.Errorf("failed to copy to file %s: %v", path, err)
+	}
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("failed to close file %s: %v", path, err)
+	}
+	if b.db, err = openBoltDb(path); err != nil {
+		return err
+	}
+	return nil
+}
+
+type boltSnapshot struct {
+	db *bbolt.DB
+}
+
+func (b *boltSnapshot) Write(w io.Writer) (int64, error) {
+	var n int64
+	err := b.db.View(func(tx *bbolt.Tx) error {
+		var err error
+		n, err = tx.WriteTo(w)
+		return err
+	})
+	return n, err
 }

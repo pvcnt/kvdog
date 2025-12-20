@@ -1,0 +1,20 @@
+// This file defines messages used internally by the Raft protocol.
+syntax = "proto3";
+
+package kvdog;
+
+option go_package = "github.com/pvcnt/kvdog/internal/proto;proto";
+
+message LogEntry {
+  message Set {
+    string key = 1;
+    bytes value = 2;
+  }
+  message Delete {
+    string key = 1;
+  }
+  oneof cmd {
+    Set set_cmd = 1;
+    Delete delete_cmd = 2;
+  }
+}

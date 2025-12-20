@@ -1,6 +1,6 @@
 # kvdog
 
-An example distributed key-value store built with Go and gRPC.
+An example distributed key-value store built with Go, Raft and gRPC.
 
 **This project is only for educational purposes, it should not be used in production!**
 
@@ -28,10 +28,51 @@ make client  # Build only the client
 
 ## Running the Server
 
-Start a kvdog server with a configuration file:
+### Single Node Mode
+
+Start a single kvdog server with a configuration file:
 
 ```bash
-./dist/kvserver -config hack/config.json
+./dist/kvserver -config hack/etc/node1.json
+```
+
+### Running a 3-Node Cluster
+
+kvdog uses HashiCorp Raft for distributed consensus. To run a 3-node cluster locally:
+
+#### Option 1: Using the Cluster Script (Recommended)
+
+```bash
+./hack/start-cluster.sh
+```
+
+You can then monitor the logs:
+```bash
+tail -f /tmp/kvdog-node1.log
+tail -f /tmp/kvdog-node2.log
+tail -f /tmp/kvdog-node3.log
+   ```
+
+#### Option 2: Manual Setup (Multiple Terminals)
+
+Cleanup any previous data:
+```bash
+rm -rf /tmp/kvdog
+```
+
+Terminal 1 (Node 1 - Bootstrap node):
+```bash
+./dist/kvserver -config hack/etc/node1.json
+```
+
+Terminal 2 (Node 2):
+```bash
+./dist/kvserver -config hack/etc/node2.json
+```
+
+Terminal 3 (Node 3):
+```bash
+./dist/kvserver -config hack/etc/node3.json
 ```
 
 ## Using the Client
