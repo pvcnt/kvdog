@@ -1,0 +1,5 @@
+kvdog-server
+.idea
+.DS_Store
+.claude/*.local.json
+dist/

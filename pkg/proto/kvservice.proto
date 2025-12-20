@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package kvdog;
+
+option go_package = "github.com/pvcnt/kvdog/pkg/proto;proto";
+
+service KVService {
+  rpc GetItem(GetItemRequest) returns (GetItemResponse);
+  rpc PutItem(PutItemRequest) returns (PutItemResponse);
+  rpc DeleteItem(DeleteItemRequest) returns (DeleteItemResponse);
+}
+
+message GetItemRequest {
+  string key = 1;
+}
+
+message GetItemResponse {
+  bytes value = 1;
+  bool found = 2;
+}
+
+message PutItemRequest {
+  string key = 1;
+  bytes value = 2;
+}
+
+message PutItemResponse {}
+
+message DeleteItemRequest {
+  string key = 1;
+}
+
+message DeleteItemResponse {}
