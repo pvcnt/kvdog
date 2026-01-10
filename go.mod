@@ -7,6 +7,7 @@ require (
 	github.com/hashicorp/go-metrics v0.5.4
 	github.com/hashicorp/raft v1.7.3
 	github.com/hashicorp/raft-boltdb/v2 v2.3.1
+	github.com/hashicorp/yamux v0.1.2
 	github.com/spf13/cobra v1.10.2
 	go.etcd.io/bbolt v1.3.5
 	google.golang.org/grpc v1.77.0

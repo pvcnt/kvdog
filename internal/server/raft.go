@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"os"
 	"path/filepath"
 	"time"
@@ -30,7 +29,7 @@ type Node struct {
 }
 
 // NewNode creates a new Raft node
-func NewNode(cfg Config, store store.Store, logger *log.Logger) (*Node, error) {
+func NewNode(cfg Config, store store.Store, transport raft.Transport, logger *log.Logger) (*Node, error) {
 	// Set up metrics
 	inm := metrics.NewInmemSink(10*time.Second, time.Minute)
 	metricsConf := metrics.DefaultConfig("kvdog")
@@ -48,17 +47,6 @@ func NewNode(cfg Config, store store.Store, logger *log.Logger) (*Node, error) {
 		Level:  hclog.Info,
 		Output: os.Stderr,
 	})
-
-	// Create the transport for Raft communication
-	addr, err := net.ResolveTCPAddr("tcp", cfg.RaftAddr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve raft address: %w", err)
-	}
-
-	transport, err := raft.NewTCPTransport(cfg.RaftAddr, addr, 3, 10*time.Second, os.Stderr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create transport: %w", err)
-	}
 
 	// Create the log store and stable store
 	logStore, err := raftboltdb.NewBoltStore(filepath.Join(cfg.DataDir, "raft-log.db"))

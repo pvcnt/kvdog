@@ -35,8 +35,6 @@ type Shard struct {
 type Replica struct {
 	// PeerID is the identifier of the peer hosting this replica
 	PeerID string `json:"peer_id"`
-	// RaftAddr is the Raft address for this replica
-	RaftAddr string `json:"raft_addr"`
 }
 
 // LoadMetadata reads and parses a metadata file
@@ -91,9 +89,6 @@ func validateMetadata(m Metadata) error {
 		for j, replica := range shard.Replicas {
 			if replica.PeerID == "" {
 				return fmt.Errorf("shard %d, replica %d: peer_id is required", shard.ID, j)
-			}
-			if replica.RaftAddr == "" {
-				return fmt.Errorf("shard %d, replica %d: raft_addr is required", shard.ID, j)
 			}
 
 			// Check for duplicate peer IDs within the same shard
